@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <canvas id="mycanvas" width="640" height="752"></canvas>
+</body>
+<script>
+  let canvas = document.getElementById('mycanvas');
+  let ctx = canvas.getContext('2d');
+  let myImageData = null;
+  const RED   = 0;
+  const GREEN = 1;
+  const BLUE  = 2;
+
+  function loadImage( fileName ) {  
+    return new Promise((resolve, reject) => {
+      let img = new Image();
+      img.addEventListener('load', e => {
+        ctx.drawImage(img, 0, 0);
+        myImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        resolve()
+      });
+      img.addEventListener('error', () => {
+        reject(new Error(`Failed to load image's URL: ${url}`));
+      });
+      img.src = fileName;
+      img.setAttribute('crossOrigin', '');
+    });
+  }
+
+  function moveColors( org, dest, color, x, y ) {
+    let total = canvas.width * canvas.height * 4;
+    let gap = (y * canvas.width * 4) + (x * 4);
+    let org_data  = org.data;
+    let dest_data = dest.data;
+    if (gap > 0) {
+      let total1stPass = total - gap;
+      for (let pos = color; pos < total1stPass; pos += 4) {
+        dest_data[pos] = org_data[pos + gap]
+      }
+      for (let pos = total1stPass + color; pos < total; pos += 4) {
+        dest_data[pos] = org_data[pos - total1stPass]
+      }
+    } else {
+      console.log( "less")
+      let total1stPass = total + gap;
+      for (let pos = (-1 * gap) + color; pos < total; pos += 4) {
+        dest_data[pos] = org_data[pos + gap]
+      }
+      for (let pos = color; pos < (-1 * gap); pos += 4) {
+        dest_data[pos] = org_data[total1stPass + pos]
+      }
+    }
+  }
+
+  function moveImage() {
+    let orgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let destData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    // moveColors( orgData, destData, RED, 20, 20 )
+    moveColors( orgData, destData, BLUE, 12, 2 )
+    // moveColors( orgData, destData, GREEN, 0, 2 )
+    ctx.putImageData(destData, 0, 0);
+  }
+
+  loadImage( 'image.jpg' )
+    .then( () => {
+      moveImage()
+    })
+</script>
+</html>
